@@ -1,3 +1,12 @@
+/**
+ * PIPKerningTable
+ *
+ * カーニング値を保持するテーブル
+ *
+ * @type {{}}
+ */
+
+
 (function(global){
     "use strict";
 
@@ -5,14 +14,6 @@
     global["pipboy"] = global.pipboy || {};
     var module = global.pipboy;
 
-
-    /**
-     * PIPKerningTable
-     *
-     * カーニング値を保持するテーブル
-     *
-     * @type {{}}
-     */
     module.PIPKerningTable = function(){
 
     };

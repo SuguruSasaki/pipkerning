@@ -14,7 +14,6 @@
  */
 
 
-
 (function(global){
     "use strict";
 
@@ -149,7 +148,6 @@
             clearTimeout(resizeTimer);
         }
         resizeTimer = setTimeout(function () {
-            console.log('resized');
 
             /*
             var $elements = document.getElementsByClassName('pip-kerning');
