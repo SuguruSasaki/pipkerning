@@ -139,49 +139,6 @@
 
 
 
-    function PIPKerning_setup(str, $element){
-        var dom  = this.__define(str);
-        $element.innerHTML = dom;
-
-        // 行頭処理
-        var $childs = $element.getElementsByTagName("span");
-        var rowWidth = $element.clientWidth;
-        var currentRowWidth = 0;
-
-        for(var j = 0; j < $childs.length; ++j){
-            // カーニング値を取得
-             var spacing = parseFloat($childs[j].style.letterSpacing, 10);
-
-            //$childs[j].style.letterSpacing = 0;
-            currentRowWidth += $childs[j].clientWidth;
-            //$childs[j].style.letterSpacing = spacing + "em";
-
-            //trace($childs[j].innerHTML,  $childs[j].clientWidth, currentRowWidth + " / " + rowWidth);
-            //trace($childs[j].innerHTML, currentRowWidth, rowWidth);
-
-            var bol = "";
-            if(j == 0) {
-                bol = PIPKerningTable.BOL[$childs[j].innerHTML];
-                if(bol) {
-                    $childs[j].style.marginLeft = bol + 'em';
-                    currentRowWidth += 16 * bol;
-                }
-            } else if(currentRowWidth >= rowWidth) {
-                bol = PIPKerningTable.BOL[$childs[j].innerHTML] + 'em';
-
-                if(bol) $childs[j].style.marginLeft = bol;
-                currentRowWidth = 0;
-
-                // 開業前の文字のletter-spacingを解除
-                $childs[j-1].style.letterSpacing = 0;
-
-                trace($childs[j].innerHTML);
-            }
-
-        }
-    }
-
-
     ////////////////////////////////////////////////////////////
     // execute
     ////////////////////////////////////////////////////////////
