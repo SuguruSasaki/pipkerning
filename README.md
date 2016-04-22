@@ -12,5 +12,15 @@ JavaScriptを利用した日本語カーニングエンジンです。
 <h1 class="js-pip-kerning">サンプル見出し</h1>
 ```
 
+あとは、カーニングデータを記述したJSとPIPKerning.jsを追加します。
+
+```html
+<script src="pipboy/logger/trace.js"></script>
+<script src="pipboy/utils/delegate.js"></script>
+<script src="pipboy/kerning/font/PIPKerningHiragino.js"></script>
+<script src="pipboy/kerning/PIPKerning.js"></script>
+```
+
+
 
 
