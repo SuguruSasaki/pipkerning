@@ -12,8 +12,6 @@
  *
  * @constructor
  */
-
-
 (function(global){
     "use strict";
 
@@ -21,32 +19,123 @@
     global["pipboy"] = global.pipboy || {};
     var module = global.pipboy;
 
-    // カーニングテーブル
-    var PIPKerningTable = module.PIPKerningTable;
 
     module.PIPKerning = function(){
-        if(!this.listeners) this.listeners = "";
+        this.kerning    = module.PIPKerningTable;
+        this.listeners  = [];
     };
     ////////////////////////////////////////////////////////////
     // Header
     ////////////////////////////////////////////////////////////
+    module.PIPKerning.prototype['setup']                    = setup;
+    module.PIPKerning.prototype['defineKerning']            = defineKerning;
+    module.PIPKerning.prototype['defineBeginningOfLine']    = defineBeginningOfLine;
+    module.PIPKerning.prototype['checkWildcardBefore']      = checkWildcardBefore;
+    module.PIPKerning.prototype['checkSpecifiedCharacter']  = checkSpecifiedCharacter;
 
-    /**
-     * セットアップメソッド
-     *
-     * @param str       テキスト
-     * @param $element DOM要素
-     * @type {PIPKerning_setup}
-     */
-    module.PIPKerning.prototype['setup'] = PIPKerning_setup;
+    module.PIPKerning.prototype['setWindowResize']          = setWindowResize;
+    module.PIPKerning.prototype['onResizeListener']         = onResizeListener;
 
-    /**
-     * [private] テキストからカーニング設定
-     *
-     * @param   str カーニング対象文字列
-     * @type {PIPKerning_define}
-     */
-    module.PIPKerning.prototype['__define'] = PIPKerning_define;
+
+
+    function setup(){
+        var $elem = document.getElementsByClassName('js-pip-kerning');
+        var len   = $elem.length;
+
+        for(var i = 0; i < len; ++i){
+            var str  = $elem[i].innerText;
+            this.listeners.push($elem[i]);
+            $elem[i].innerHTML = this.defineKerning(str);
+            this.defineBeginningOfLine($elem[i]);
+        }
+    }
+
+    function setWindowResize(){
+        window.addEventListener('resize', Delegate.create(this, this.onResizeListener) );
+    }
+
+    function onResizeListener(e){
+        var len = this.listeners.length;
+        for(var i = 0; i < len; ++i){
+            this.defineBeginningOfLine(this.listeners[i]);
+        }
+    }
+
+
+    function defineKerning(str) {
+        var characters  = str.split('');
+        var output      = '';
+        var len         = characters.length - 1; // 最後の文字は何も指定しない。
+
+        for(var i = 0; i < len; ++i) {
+            var chara       = characters[i];
+            var charaNext   = characters[i + 1];
+            var result      = 0;
+            result = this.checkWildcardBefore(chara + '*', result);             // 1.ワイルドカードのペアを調べる
+            result = this.checkSpecifiedCharacter( chara + charaNext , result); // 2.指定文字のペアを調べる
+            output += createCharacterTag(chara, result);                        // 3.HTMLタグを作成
+        }
+
+        // 最後の文字
+        output += createCharacterTag(characters[len], 0);
+        return output;
+    }
+
+    function defineBeginningOfLine($element){
+        var $childs = $element.getElementsByTagName("span");
+        var rowWidth = $element.clientWidth;
+        var currentRowWidth = 0;
+        var len = $childs.length;
+
+        for(var i = 0; i < len; ++i){
+            var $spanTag = $childs[i];
+            var kerningValue = parseFloat($spanTag.style.letterSpacing, 10);
+            if(currentRowWidth == 0) {
+                var value = this.kerning.BOL[$spanTag.innerHTML];
+                if(value) {
+                    $spanTag.style.marginLeft = value + 'em';
+                    var fontSize = window.getComputedStyle($spanTag, null).getPropertyValue('font-size');
+                    fontSize = Number( fontSize.replace(/px/, '') );
+                    currentRowWidth += fontSize * value;
+                }
+                currentRowWidth += $childs[i].clientWidth;
+            }
+            else {
+                currentRowWidth += $childs[i].clientWidth;
+                if(currentRowWidth >= rowWidth) {
+                    var value = this.kerning.BOL[$spanTag.innerHTML];
+                    if(value) {
+                        $spanTag.style.marginLeft = value + 'em';
+                        var fontSize = window.getComputedStyle($spanTag, null).getPropertyValue('font-size');
+                        fontSize = Number( fontSize.replace(/px/, '') );
+                        currentRowWidth += fontSize * value;
+                    }
+                    currentRowWidth = 0;
+                }
+                else {
+                    if($spanTag.style.marginLeft) $spanTag.style.marginLeft = 0 + 'em';
+
+                }
+            }
+
+
+        }
+
+    }
+
+
+
+    function checkWildcardBefore(str, result){
+        return this.kerning.table[str] ? this.kerning.table[str] : result;
+    }
+
+    function checkSpecifiedCharacter(str, result){
+        return this.kerning.table[str] ? this.kerning.table[str] : result;
+    }
+
+    function createCharacterTag(s, margin){
+        return '<span style="display: inline-block; letter-spacing: '+ margin +'em;">' + s + '</span>';
+    }
 
 
 
@@ -92,79 +181,14 @@
         }
     }
 
-    function PIPKerning_define(str){
-        var characters = str.split('');
-        var table = PIPKerningTable.table;
-        var len = characters.length - 1; // 最後の文字は何も指定しない。
-        var output = "";
-        for(var i = 0; i < len; ++i){
-
-            // 次の文字ワイルドカードのペアを調べる
-            var pair   = characters[i] + '*';
-            var result = table[pair];
-
-            // ワイルドカードと次の文字
-            if(!result) {
-                pair  = '*'+characters[i+1];
-                result = table[pair];
-            }
-
-            // 文字のペア
-            pair = characters[i] + characters[i+1];
-            if(table[pair]) result = table[pair];
-
-            if(!result) result = 0;
-            output += '<span style="display: inline-block; letter-spacing: '+ result +'em;">' + characters[i] + '</span>';
-        }
-
-        // 最後の文字
-        output += '<span style="display: inline-block; ">' + characters[len] + '</span>';
-        return output;
-    }
-
 
     ////////////////////////////////////////////////////////////
     // execute
     ////////////////////////////////////////////////////////////
 
-    var headingList = []; // カーニング対象の各テキストを格納します。
-
-    var $elements = document.getElementsByClassName('js-pip-kerning');
-    var len = $elements.length;
-    for(var i = 0; i < len; ++i){
-        var str = $elements[i].innerHTML;
-        headingList.push(str);
-        var pipKerning = new module.PIPKerning();
-        pipKerning.setup(str, $elements[i]);
-    }
-
-
-    var resizeTimer;
-    var interval = Math.floor(1000 / 60 * 10);
-
-    window.addEventListener('resize', function (event) {
-        //console.log('resizing');
-        if (resizeTimer !== false) {
-            clearTimeout(resizeTimer);
-        }
-        resizeTimer = setTimeout(function () {
-
-            /*
-            var $elements = document.getElementsByClassName('pip-kerning');
-            var len = $elements.length;
-            for(var i = 0; i < len; ++i){
-                var str = headingList[i];
-                var pipKerning = new module.PIPKerning();
-                pipKerning.setup(str, $elements[i]);
-            }
-
-*/
-
-        }, interval);
-    });
-
-
-
+    var kerning = new module.PIPKerning();
+    kerning.setup();
+    kerning.setWindowResize();
 
 
 
